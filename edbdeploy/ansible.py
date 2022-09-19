@@ -16,7 +16,8 @@ class AnsibleCli:
         self.dir = dir
         # Ansible supported versions interval
         self.min_version = (2, 10, 7)
-        self.max_version = (2, 11, 1)
+#        self.max_version = (2, 11, 1)
+        self.max_version = (2, 12, 8)
         # Path to look up for executable
         self.bin_path = None
         # Force Ansible binary path if bin_path exists and contains
@@ -99,6 +100,39 @@ class AnsibleCli:
             raise AnsibleCliError(
                 "Failed to execute the following command, please check the "
                 "logs for details: %s" % e.cmd
+            )
+
+    def run_playbook_minimal(
+        self, cloud, playbook, disable_pipelining=False
+    ):
+        try:
+            # TODO: extra_vars needs to be escaped for the shell or maybe dump
+            # it to a file and pass that filename to ansible-playbook without
+            # parsing.
+            command = [
+                    self.bin("ansible-playbook"),
+                    playbook,
+                    "--ssh-common-args='-o StrictHostKeyChecking=no'"
+                ]
+
+            environ = os.environ.copy()
+            if not disable_pipelining:
+                # Enable pipelening for better execution time
+                environ['ANSIBLE_PIPELINING'] = 'true'
+                environ['ANSIBLE_SSH_PIPELINING'] = 'true'
+            else:
+                environ['ANSIBLE_PIPELINING'] = 'false'
+                environ['ANSIBLE_SSH_PIPELINING'] = 'false'
+
+            rc = exec_shell_live(command, environ=environ, cwd=self.dir)
+            if rc != 0:
+                raise Exception("Return code not 0")
+        except Exception as e:
+            logging.error("Failed to execute the command")
+            logging.error(e)
+            raise AnsibleCliError(
+                "Failed to execute Ansible playbook, please check the logs for"
+                " details."
             )
 
     def run_playbook(
