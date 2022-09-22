@@ -16,7 +16,6 @@ class AnsibleCli:
         self.dir = dir
         # Ansible supported versions interval
         self.min_version = (2, 10, 7)
-#        self.max_version = (2, 11, 1)
         self.max_version = (2, 12, 8)
         # Path to look up for executable
         self.bin_path = None
